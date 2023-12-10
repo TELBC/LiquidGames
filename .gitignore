@@ -1,1 +1,4 @@
-﻿/.idea/.idea.LiquidGames.dir/.idea/workspace.xml
+﻿/.idea/.idea.LiquidGames.dir/.idea/*
+*/bin/*
+*/obj/*
+*/.idea/*

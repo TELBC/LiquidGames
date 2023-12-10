@@ -1,0 +1,31 @@
+﻿version: '3.8'
+
+services:
+  liquid-api:
+    build:
+      context: ../LiquidAPI
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./Docker/LiquidAPI:/app
+
+  liquid-mongo:
+    image: mongo:latest
+    container_name: mongo-jammy
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  liquid-vue:
+    build:
+      context: ../LiquidVue
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../LiquidVue:/app
+
+volumes:
+  mongodb_data:

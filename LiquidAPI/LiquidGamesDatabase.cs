@@ -1,5 +1,8 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Driver;
+
+namespace LiquidAPI;
+
 public class LiquidGamesDatabase
 {
     public MongoClient Client { get; }

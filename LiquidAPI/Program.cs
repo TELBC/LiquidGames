@@ -1,40 +1,42 @@
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
+using System;
 using System.Globalization;
+using System.IO;
 using CsvHelper;
 using CsvHelper.Configuration;
 using MongoDB.Driver;
 
+namespace LiquidAPI;
 
 public class Program
 {
-    static int Main(string[] args)
+    public static void Main(string[] args)
     {
-        Console.BackgroundColor = ConsoleColor.White;
-        Console.ForegroundColor = ConsoleColor.Black;
-        Console.Clear();
+        var host = CreateHostBuilder(args).Build();
 
-        string connectionString = "mongodb://localhost:27017";
-        string databaseName = "liquidgames";
+        using var scope = host.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<LiquidGamesDatabase>();
 
-        var liquidGamesDb = new LiquidGamesDatabase(connectionString, databaseName);
+        var csvFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "vgsales.csv");
+        SeedDatabase(dbContext, csvFilePath);
 
-        try
-        {
-            string csvFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "vgsales.csv");
-            SeedDatabase(liquidGamesDb, csvFilePath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
-            return 1;
-        }
-
-        Console.WriteLine("Database seeding completed successfully.");
-        return 0;
+        host.Run();
     }
 
+    public static IHostBuilder CreateHostBuilder(string[] args) =>
+        Host.CreateDefaultBuilder(args)
+            .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
 
     static void SeedDatabase(LiquidGamesDatabase liquidGamesDb, string csvFilePath)
     {
+        var alreadySeeded = liquidGamesDb.Genres.Find(_ => true).Any();
+        if (alreadySeeded)
+        {
+            Console.WriteLine("Database already seeded.");
+            return;
+        }
+        
         var config = new CsvConfiguration(CultureInfo.InvariantCulture)
         {
             HasHeaderRecord = true,

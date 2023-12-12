@@ -6,37 +6,43 @@ using System.IO;
 using CsvHelper;
 using CsvHelper.Configuration;
 using MongoDB.Driver;
+using System.Diagnostics;
 
 namespace LiquidAPI;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var host = CreateHostBuilder(args).Build();
 
         using var scope = host.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<LiquidGamesDatabase>();
-
         var csvFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "vgsales.csv");
-        SeedDatabase(dbContext, csvFilePath);
 
-        host.Run();
+        var stopwatch = Stopwatch.StartNew();
+        await SeedDatabaseAsync(dbContext, csvFilePath);
+
+        stopwatch.Stop();
+        Console.WriteLine($"Database seeding completed in {stopwatch.ElapsedMilliseconds} ms.");
+        // Database seeding took ~882ms last time tested
+
+        await host.RunAsync();
     }
 
     public static IHostBuilder CreateHostBuilder(string[] args) =>
         Host.CreateDefaultBuilder(args)
             .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
 
-    static void SeedDatabase(LiquidGamesDatabase liquidGamesDb, string csvFilePath)
+    private static async Task SeedDatabaseAsync(LiquidGamesDatabase liquidGamesDb, string csvFilePath)
     {
-        var alreadySeeded = liquidGamesDb.Genres.Find(_ => true).Any();
+        var alreadySeeded = await liquidGamesDb.Genres.Find(_ => true).AnyAsync();
         if (alreadySeeded)
         {
             Console.WriteLine("Database already seeded.");
             return;
         }
-        
+
         var config = new CsvConfiguration(CultureInfo.InvariantCulture)
         {
             HasHeaderRecord = true,
@@ -46,48 +52,29 @@ public class Program
         using var csv = new CsvReader(reader, config);
 
         var records = csv.GetRecords<CsvGameRecord>().ToList();
+        var gamesByGenre = new Dictionary<string, List<LiquidGamesDatabase.Game>>();
 
         foreach (var record in records)
         {
-            // Handling potential 'N/A' values and parsing
+            // Parsing logic
             if (!int.TryParse(record.Rank, NumberStyles.Any, CultureInfo.InvariantCulture, out int rank))
             {
                 continue; // Skip records without a valid rank
             }
 
-            if (!double.TryParse(record.NA_Sales, NumberStyles.Any, CultureInfo.InvariantCulture, out double naSales))
-            {
-                naSales = 0;
-            }
-
-            if (!double.TryParse(record.EU_Sales, NumberStyles.Any, CultureInfo.InvariantCulture, out double euSales))
-            {
-                euSales = 0;
-            }
-
-            if (!double.TryParse(record.JP_Sales, NumberStyles.Any, CultureInfo.InvariantCulture, out double jpSales))
-            {
-                jpSales = 0;
-            }
-
-            if (!double.TryParse(record.Other_Sales, NumberStyles.Any, CultureInfo.InvariantCulture,
-                    out double otherSales))
-            {
-                otherSales = 0;
-            }
-
-            if (!double.TryParse(record.Global_Sales, NumberStyles.Any, CultureInfo.InvariantCulture,
-                    out double globalSales))
-            {
-                globalSales = 0;
-            }
+            double.TryParse(record.NA_Sales, NumberStyles.Any, CultureInfo.InvariantCulture, out double naSales);
+            double.TryParse(record.EU_Sales, NumberStyles.Any, CultureInfo.InvariantCulture, out double euSales);
+            double.TryParse(record.JP_Sales, NumberStyles.Any, CultureInfo.InvariantCulture, out double jpSales);
+            double.TryParse(record.Other_Sales, NumberStyles.Any, CultureInfo.InvariantCulture, out double otherSales);
+            double.TryParse(record.Global_Sales, NumberStyles.Any, CultureInfo.InvariantCulture,
+                out double globalSales);
 
             var game = new LiquidGamesDatabase.Game
             {
                 Rank = rank,
                 GameName = record.Name,
                 Platform = record.Platform,
-                ReleaseYear = int.TryParse(record.Year, out int year) ? year : 0, // Handling year separately
+                ReleaseYear = int.TryParse(record.Year, out int year) ? year : 0,
                 Publisher = record.Publisher,
                 NA_Sales = naSales,
                 EU_Sales = euSales,
@@ -96,14 +83,28 @@ public class Program
                 Global_Sales = globalSales,
             };
 
-            // MongoDB filter and update definitions
-            var filter = Builders<LiquidGamesDatabase.Genre>.Filter.Eq(g => g.GenreName, record.Genre);
-            var update = Builders<LiquidGamesDatabase.Genre>.Update.Push(g => g.Games, game);
-
-            liquidGamesDb.Genres.FindOneAndUpdate(filter, update, new FindOneAndUpdateOptions<LiquidGamesDatabase.Genre>
+            if (!gamesByGenre.ContainsKey(record.Genre))
             {
-                IsUpsert = true
-            });
+                gamesByGenre[record.Genre] = new List<LiquidGamesDatabase.Game>();
+            }
+
+            gamesByGenre[record.Genre].Add(game);
+        }
+
+        // Bulk insert
+        var bulkOps = new List<WriteModel<LiquidGamesDatabase.Genre>>();
+        foreach (var genre in gamesByGenre)
+        {
+            var filter = Builders<LiquidGamesDatabase.Genre>.Filter.Eq(g => g.GenreName, genre.Key);
+            var update = Builders<LiquidGamesDatabase.Genre>.Update.PushEach(g => g.Games, genre.Value);
+            var upsertOne = new UpdateOneModel<LiquidGamesDatabase.Genre>(filter, update) { IsUpsert = true };
+            bulkOps.Add(upsertOne);
+        }
+
+        if (bulkOps.Any())
+        {
+            await liquidGamesDb.Genres.BulkWriteAsync(bulkOps);
+            Console.WriteLine("Bulk insert operation completed.");
         }
     }
 }

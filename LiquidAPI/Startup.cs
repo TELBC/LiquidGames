@@ -36,7 +36,5 @@ public class Startup
         app.UseAuthorization();
 
         app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
-
-        // Optional: Seed the database here or in Program.cs based on your preference
     }
 }

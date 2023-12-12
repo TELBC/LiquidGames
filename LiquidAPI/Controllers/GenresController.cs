@@ -3,10 +3,13 @@ using MongoDB.Driver;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using LiquidAPI;
-using MongoDB.Bson; // Import your namespace if needed
+using MongoDB.Bson;
 
 namespace LiquidAPI.Controllers;
 
+/// <summary>
+/// Controller for the /Genres endpoint.
+/// </summary>
 [ApiController]
 [Route("[controller]")]
 public class GenresController : ControllerBase
@@ -18,7 +21,11 @@ public class GenresController : ControllerBase
         _liquidGamesDb = liquidGamesDb;
     }
 
-    // POST: /genres/add
+    /// <summary>
+    /// Adds a new genre to the database.
+    /// </summary>
+    /// <param name="genre"></param>
+    /// <returns></returns>
     [HttpPost("add")]
     public async Task<IActionResult> AddGenre([FromBody] LiquidGamesDatabase.Genre genre)
     {
@@ -26,7 +33,12 @@ public class GenresController : ControllerBase
         return Ok(genre);
     }
 
-    // POST: /genres/addGame/{genreName}
+    /// <summary>
+    /// Adds a new game to the specified genre.
+    /// </summary>
+    /// <param name="genreName"></param>
+    /// <param name="game"></param>
+    /// <returns></returns>
     [HttpPost("addGame/{genreName}")]
     public async Task<IActionResult> AddGame(string genreName, [FromBody] LiquidGamesDatabase.Game game)
     {
@@ -36,7 +48,10 @@ public class GenresController : ControllerBase
         return Ok(game);
     }
 
-    // GET: /genres
+    /// <summary>
+    /// Gets all genres in the database.
+    /// </summary>
+    /// <returns></returns>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<LiquidGamesDatabase.Genre>>> GetGenres()
     {
@@ -44,7 +59,11 @@ public class GenresController : ControllerBase
         return Ok(genres);
     }
 
-    // GET: /genres/{genreName}
+    /// <summary>
+    /// Gets a specific genre by name.
+    /// </summary>
+    /// <param name="genreName"></param>
+    /// <returns></returns>
     [HttpGet("{genreName}")]
     public async Task<ActionResult<LiquidGamesDatabase.Genre>> GetGenre(string genreName)
     {
@@ -57,7 +76,12 @@ public class GenresController : ControllerBase
         return Ok(genre);
     }
 
-    // PUT: /genres/update/{genreId}
+    /// <summary>
+    /// Gets a specific game by name.
+    /// </summary>
+    /// <param name="genreId"></param>
+    /// <param name="updatedGenre"></param>
+    /// <returns></returns>
     [HttpPut("update/{genreId}")]
     public async Task<IActionResult> UpdateGenre(string genreId, [FromBody] LiquidGamesDatabase.Genre updatedGenre)
     {
@@ -69,8 +93,12 @@ public class GenresController : ControllerBase
         else
             return NotFound();
     }
-
-    // DELETE: /genres/{genreId}
+    
+    /// <summary>
+    /// Deletes a specific genre by name.
+    /// </summary>
+    /// <param name="genreId"></param>
+    /// <returns></returns>
     [HttpDelete("{genreId}")]
     public async Task<IActionResult> DeleteGenre(string genreId)
     {

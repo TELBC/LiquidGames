@@ -7,14 +7,18 @@ public class LiquidGamesDatabase
 {
     public MongoClient Client { get; }
     public IMongoDatabase Db { get; }
-    public IMongoCollection<Genre> Genres => Db.GetCollection<Genre>("genres");
+    public IMongoCollection<Genre> Genres { get; }
 
-    public LiquidGamesDatabase(string connectionString, string databaseName)
+    public ICollection<Game> Games => Genres.AsQueryable().SelectMany(genre => genre.Games).ToList();
+
+    public LiquidGamesDatabase(string connectionString, string databaseName, string collectionName)
     {
         var settings = MongoClientSettings.FromConnectionString(connectionString);
         Client = new MongoClient(settings);
         Db = Client.GetDatabase(databaseName);
+        Genres = Db.GetCollection<Genre>(collectionName);
     }
+
 
     public class Genre
     {

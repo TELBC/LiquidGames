@@ -11,9 +11,11 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        // Configure your MongoDB database service
-        services.AddSingleton<LiquidGamesDatabase>(sp =>
-            new LiquidGamesDatabase("mongodb://localhost:27017", "liquidgames"));
+        services.AddSingleton<LiquidGamesDatabase>(_ =>
+            new LiquidGamesDatabase(
+                Configuration.GetValue<string>("DatabaseSettings:ConnectionString"), 
+                Configuration.GetValue<string>("DatabaseSettings:DatabaseName"),
+                Configuration.GetValue<string>("DatabaseSettings:CollectionName")));
         services.AddControllers();
     }
 

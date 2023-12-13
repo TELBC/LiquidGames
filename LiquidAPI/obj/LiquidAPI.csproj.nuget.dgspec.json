@@ -1,27 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\spayc\\RiderProjects\\LiquidGames\\LiquidAPI\\LiquidAPI.csproj": {}
+    "C:\\Users\\Trist\\RiderProjects\\LiquidGames\\LiquidAPI\\LiquidAPI.csproj": {}
   },
   "projects": {
-    "C:\\Users\\spayc\\RiderProjects\\LiquidGames\\LiquidAPI\\LiquidAPI.csproj": {
+    "C:\\Users\\Trist\\RiderProjects\\LiquidGames\\LiquidAPI\\LiquidAPI.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\spayc\\RiderProjects\\LiquidGames\\LiquidAPI\\LiquidAPI.csproj",
+        "projectUniqueName": "C:\\Users\\Trist\\RiderProjects\\LiquidGames\\LiquidAPI\\LiquidAPI.csproj",
         "projectName": "LiquidAPI",
-        "projectPath": "C:\\Users\\spayc\\RiderProjects\\LiquidGames\\LiquidAPI\\LiquidAPI.csproj",
-        "packagesPath": "C:\\Users\\spayc\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\spayc\\RiderProjects\\LiquidGames\\LiquidAPI\\obj\\",
+        "projectPath": "C:\\Users\\Trist\\RiderProjects\\LiquidGames\\LiquidAPI\\LiquidAPI.csproj",
+        "packagesPath": "C:\\Users\\Trist\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Trist\\RiderProjects\\LiquidGames\\LiquidAPI\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\spayc\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\Trist\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net7.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -63,6 +61,14 @@
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[6.5.0, )"
+            },
+            "System.Linq": {
+              "target": "Package",
+              "version": "[4.3.0, )"
+            },
+            "dotenv.net": {
+              "target": "Package",
+              "version": "[3.1.3, )"
             }
           },
           "imports": [
@@ -84,7 +90,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.401\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.404\\RuntimeIdentifierGraph.json"
         }
       }
     }

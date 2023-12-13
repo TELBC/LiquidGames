@@ -11,10 +11,11 @@ public class Program
     public static async Task Main(string[] args)
     {
         var host = CreateHostBuilder(args).Build();
+        var env = host.Services.GetRequiredService<IWebHostEnvironment>();
 
         using var scope = host.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<LiquidGamesDatabase>();
-        var csvFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "vgsales.csv");
+        var csvFilePath = Path.Combine(env.ContentRootPath, "vgsales.csv");
 
         var stopwatch = Stopwatch.StartNew();
         await SeedDatabaseAsync(dbContext, csvFilePath);
@@ -27,8 +28,12 @@ public class Program
     }
 
     public static IHostBuilder CreateHostBuilder(string[] args) =>
-        Host.CreateDefaultBuilder(args)
-            .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
+       Host.CreateDefaultBuilder(args)
+       .ConfigureWebHostDefaults(webBuilder =>
+       {
+           webBuilder.UseStartup<Startup>();
+           webBuilder.UseUrls("http://0.0.0.0:5000");
+       });
 
     private static async Task SeedDatabaseAsync(LiquidGamesDatabase liquidGamesDb, string csvFilePath)
     {

@@ -4,15 +4,16 @@ services:
   liquid-api:
     build:
       context: ../LiquidAPI
-      dockerfile: Dockerfile
+      dockerfile: ../Docker/api.Dockerfile
     ports:
       - "5000:5000"
-    volumes:
-      - ./Docker/LiquidAPI:/app
+    environment:
+      - DatabaseSettings:ConnectionString=mongodb://liquid-mongo:27017
+      - ASPNETCORE_URLS=http://+:5000
 
   liquid-mongo:
     image: mongo:latest
-    container_name: mongo-jammy
+    container_name: liquid-mongo
     ports:
       - "27017:27017"
     volumes:
@@ -21,11 +22,9 @@ services:
   liquid-vue:
     build:
       context: ../LiquidVue
-      dockerfile: Dockerfile
+      dockerfile: ../Docker/vue.Dockerfile
     ports:
-      - "8080:8080"
-    volumes:
-      - ../LiquidVue:/app
+      - "8080:8000"
 
 volumes:
   mongodb_data:

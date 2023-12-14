@@ -24,17 +24,15 @@ public class Startup
         // Postgres
         services.AddDbContext<LiquidGamesContext>(options =>
             options.UseNpgsql(Configuration.GetConnectionString("PostgresConnection")));
-        
-        services.AddControllers();
+
         services.AddCors(options =>
-        {
-            options.AddDefaultPolicy(builder =>
             {
-                builder.AllowAnyOrigin()
+                options.AddPolicy("MyPolicy",
+                    builder => builder.AllowAnyOrigin()
                     .AllowAnyHeader()
-                    .AllowAnyMethod();
-            });
-        });
+                    .AllowAnyMethod());
+            }); 
+        services.AddControllers();
     }
 
     public void Configure(IApplicationBuilder  app, IWebHostEnvironment env)
@@ -44,6 +42,7 @@ public class Startup
             app.UseDeveloperExceptionPage();
         }
 
+        app.UseCors("MyPolicy");
         app.UseHttpsRedirection();
         app.UseRouting();
         app.UseAuthorization();

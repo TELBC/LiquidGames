@@ -10,6 +10,7 @@
           @update:orderBy="updateOrderBy"
           @update:orderType="updateOrderType"
           @update:selectedGenre="updateSelectedGenre"
+          @searchGames="performSearch"
       />
     </div>
     <div class="content">
@@ -41,7 +42,8 @@ export default {
       selectedGenre: 'All',
       orderByOptions: ['Year', 'Global_Sales', 'EU_Sales', 'NA_Sales', 'JP_Sales', 'Other_Sales'],
       orderTypeOptions: ['Desc', 'Asc'],
-      genres: []
+      genres: [],
+      searchTerm: '',
     }
   },
   methods: {
@@ -62,6 +64,14 @@ export default {
         this.games = this.selectedGenre === 'All' ? [...this.games, ...response.data] : [...this.games, ...response.data.games];
       } catch (error) {
         console.error('Error loading more games:', error);
+      }
+    },
+    async performSearch(searchTerm) {
+      try {
+        const response = await axios.get(`http://localhost:5000/Games/similar/${searchTerm}?orderBy=${this.orderBy}&orderType=${this.orderType}`);
+        this.games = this.selectedGenre === 'All' ? response.data : response.data.games;
+      } catch (error) {
+        console.error('Error fetching similar games:', error);
       }
     },
     updateOrderBy(value) {
@@ -88,7 +98,14 @@ export default {
   mounted() {
     this.fetchGenres();
     this.fetchGames();
-  }
+  },
+  watch: {
+    searchTerm(newSearchValue, oldSearchValue) {
+      if (newSearchValue === '') {
+        this.fetchGames();
+      }
+    },
+  },
 }
 </script>
 

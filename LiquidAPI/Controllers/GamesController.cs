@@ -82,17 +82,65 @@ public class GamesController : ControllerBase
 
 
     [HttpGet("similar/{gameName}")]
-    public async Task<ActionResult<IEnumerable<LiquidGamesDatabase.Game>>> GetSimilarGames(string gameName)
+    public async Task<ActionResult<IEnumerable<LiquidGamesDatabase.Game>>> GetSimilarGames(string gameName, OrderBy orderBy, OrderType orderType)
     {
-        var gamesWithSimilarName = _liquidGamesDb.Games
-            .Where(g => g.GameName.Contains(gameName))
-            .ToList();
+        var games = from g in _liquidGamesDb.Games
+            select g;
 
-        if (gamesWithSimilarName.Count == 0)
+        if (!String.IsNullOrEmpty(gameName))
         {
-            return NotFound();
+            games = _liquidGamesDb.Games.Where(g => g.GameName.Contains(gameName,StringComparison.OrdinalIgnoreCase));
+        }
+        switch (orderType)
+        {
+            case OrderType.Asc:
+                switch (orderBy)
+                {
+                    case OrderBy.Year:
+                        games = games.OrderBy(g => g.ReleaseYear);
+                        break;
+                    case OrderBy.Global_Sales:
+                        games = games.OrderBy(g => g.Global_Sales);
+                        break;
+                    case OrderBy.EU_Sales:
+                        games = games.OrderBy(g => g.EU_Sales);
+                        break;
+                    case OrderBy.NA_Sales:
+                        games = games.OrderBy(g => g.NA_Sales);
+                        break;
+                    case OrderBy.JP_Sales:
+                        games = games.OrderBy(g => g.JP_Sales);
+                        break;
+                    case OrderBy.Other_Sales:
+                        games = games.OrderBy(g => g.Other_Sales);
+                        break;
+                }
+                break;
+            case OrderType.Desc:
+                switch (orderBy)
+                {
+                    case OrderBy.Year:
+                        games = games.OrderByDescending(g => g.ReleaseYear);
+                        break;
+                    case OrderBy.Global_Sales:
+                        games = games.OrderByDescending(g => g.Global_Sales);
+                        break;
+                    case OrderBy.EU_Sales:
+                        games = games.OrderByDescending(g => g.EU_Sales);
+                        break;
+                    case OrderBy.NA_Sales:
+                        games = games.OrderByDescending(g => g.NA_Sales);
+                        break;
+                    case OrderBy.JP_Sales:
+                        games = games.OrderByDescending(g => g.JP_Sales);
+                        break;
+                    case OrderBy.Other_Sales:
+                        games = games.OrderByDescending(g => g.Other_Sales);
+                        break;
+                }
+                break;
         }
 
-        return Ok(gamesWithSimilarName);
+        return Ok(games.ToList());
     }
 }

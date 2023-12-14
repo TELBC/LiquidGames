@@ -8,6 +8,9 @@
           <div class="games">Games</div>
         </div>
       </div>
+      <div class="search-container">
+        <input type="text" v-model="searchTerm" @input="handleInput" placeholder="Search for similar games...">
+      </div>
       <div class="dropdowns">
         <select v-model="selectedGenre" @change="updateSelectedGenre" class="load-button">
           <option v-for="genre in genres" :value="genre">{{ genre }}</option>
@@ -35,10 +38,18 @@ export default {
   },
   data() {
     return {
-      selectedGenre: 'All'
+      selectedGenre: 'All',
+      searchTerm: '',
+      delayTimer: null
     };
   },
   methods: {
+    handleInput() {
+      clearTimeout(this.delayTimer);
+      this.delayTimer = setTimeout(() => {
+        this.searchGames();
+      }, 200);
+    },
     updateOrderBy(event) {
       this.$emit('update:orderBy', event.target.value);
     },
@@ -47,6 +58,9 @@ export default {
     },
     updateSelectedGenre(event) {
       this.$emit('update:selectedGenre', event.target.value);
+    },
+    searchGames() {
+      this.$emit('searchGames', this.searchTerm);
     }
   }
 };
@@ -109,7 +123,7 @@ export default {
   padding: 5px 10px;
   font-size: 12px;
   width: 100px;
-  background-color: #e8e8e8;
+  background-color: white;
   color: black;
   border-radius: 5px;
   cursor: pointer;
@@ -117,6 +131,15 @@ export default {
 }
 
 .load-button:hover {
-  background-color: #cbcbcb;
+  background-color: white;
+}
+.search-container {
+  margin: 10px;
+}
+.search-container input[type="text"] {
+  border: solid black 1px;
+  padding: 8px;
+  border-radius: 4px;
+  width: 250px;
 }
 </style>

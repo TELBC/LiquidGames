@@ -15,7 +15,7 @@
     </div>
     <div class="content">
       <div class="grid-container">
-        <GameInfo v-for="game in games" :key="game.rank" :game="game" class="game-info-item"/>
+        <GameInfo v-for="game in games" :key="game.rank" :game="game" class="game-info-item" :order-by="orderBy"/>
       </div>
     </div>
     <button @click="loadMoreGames" class="load-button">Load More Games</button>
@@ -40,7 +40,7 @@ export default {
       orderBy: 'Global_Sales',
       orderType:'Desc',
       selectedGenre: 'All',
-      orderByOptions: ['Year', 'Global_Sales', 'EU_Sales', 'NA_Sales', 'JP_Sales', 'Other_Sales'],
+      orderByOptions: ['Global_Sales', 'Year', 'EU_Sales', 'NA_Sales', 'JP_Sales', 'Other_Sales'],
       orderTypeOptions: ['Desc', 'Asc'],
       genres: [],
       searchTerm: '',
@@ -50,7 +50,7 @@ export default {
     async fetchGames() {
       try {
         let endpoint = this.selectedGenre === 'All' ? '/Games' : `/Genres/${this.selectedGenre}`;
-        const response = await axios.get(`http://localhost:5000${endpoint}?orderBy=${this.orderBy}&orderType=${this.orderType}&page=${this.currentPage}&pageSize=${this.pageSize}&filter=${this.filter}`);
+        const response = await axios.get(`http://localhost:5000${endpoint}?orderBy=${this.orderBy}&orderType=${this.orderType}&page=${this.currentPage}&pageSize=${this.pageSize}`);
         this.games = this.selectedGenre === 'All' ? response.data : response.data.games;
       } catch (error) {
         console.error('Error fetching games:', error);
@@ -60,7 +60,7 @@ export default {
       this.currentPage++;
       try {
         let endpoint = this.selectedGenre === 'All' ? '/Games' : `/Genres/${this.selectedGenre}`;
-        const response = await axios.get(`http://localhost:5000${endpoint}?orderBy=${this.orderBy}&orderType=${this.orderType}&page=${this.currentPage}&pageSize=${this.pageSize}&filter=${this.filter}`);
+        const response = await axios.get(`http://localhost:5000${endpoint}?orderBy=${this.orderBy}&orderType=${this.orderType}&page=${this.currentPage}&pageSize=${this.pageSize}`);
         this.games = this.selectedGenre === 'All' ? [...this.games, ...response.data] : [...this.games, ...response.data.games];
       } catch (error) {
         console.error('Error loading more games:', error);

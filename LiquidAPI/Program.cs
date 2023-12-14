@@ -20,7 +20,7 @@ public class Program
 
         using var scope = host.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<LiquidGamesDatabase>();
-        var csvFilePath = Path.Combine(env.ContentRootPath, "vgsa`les.csv");
+        var csvFilePath = Path.Combine(env.ContentRootPath, "vgsales.csv");
 
         //Inserts ~17000 games into the database
         Console.Write(

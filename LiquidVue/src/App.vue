@@ -6,8 +6,10 @@
           :orderType="orderType"
           :orderByOptions="orderByOptions"
           :orderTypeOptions="orderTypeOptions"
+          :genres="genres"
           @update:orderBy="updateOrderBy"
           @update:orderType="updateOrderType"
+          @update:selectedGenre="updateSelectedGenre"
       />
     </div>
     <div class="content">
@@ -36,15 +38,18 @@ export default {
       pageSize: 100,
       orderBy: 'Global_Sales',
       orderType:'Desc',
+      selectedGenre: 'All',
       orderByOptions: ['Year', 'Global_Sales', 'EU_Sales', 'NA_Sales', 'JP_Sales', 'Other_Sales'],
-      orderTypeOptions: ['Desc', 'Asc']
+      orderTypeOptions: ['Desc', 'Asc'],
+      genres: []
     }
   },
   methods: {
     async fetchGames() {
       try {
-        const response = await axios.get(`http://localhost:5000/Games?orderBy=${this.orderBy}&orderType=${this.orderType}&page=${this.currentPage}&pageSize=${this.pageSize}`);
-        this.games = response.data;
+        let endpoint = this.selectedGenre === 'All' ? '/Games' : `/Genres/${this.selectedGenre}`;
+        const response = await axios.get(`http://localhost:5000${endpoint}?orderBy=${this.orderBy}&orderType=${this.orderType}&page=${this.currentPage}&pageSize=${this.pageSize}&filter=${this.filter}`);
+        this.games = this.selectedGenre === 'All' ? response.data : response.data.games;
       } catch (error) {
         console.error('Error fetching games:', error);
       }
@@ -52,8 +57,9 @@ export default {
     async loadMoreGames() {
       this.currentPage++;
       try {
-        const response = await axios.get(`http://localhost:5000/Games?orderBy=${this.orderBy}&orderType=${this.orderType}&page=${this.currentPage}&pageSize=${this.pageSize}`);
-        this.games = [...this.games, ...response.data];
+        let endpoint = this.selectedGenre === 'All' ? '/Games' : `/Genres/${this.selectedGenre}`;
+        const response = await axios.get(`http://localhost:5000${endpoint}?orderBy=${this.orderBy}&orderType=${this.orderType}&page=${this.currentPage}&pageSize=${this.pageSize}&filter=${this.filter}`);
+        this.games = this.selectedGenre === 'All' ? [...this.games, ...response.data] : [...this.games, ...response.data.games];
       } catch (error) {
         console.error('Error loading more games:', error);
       }
@@ -65,9 +71,22 @@ export default {
     updateOrderType(value) {
       this.orderType = value;
       this.fetchGames();
+    },
+    updateSelectedGenre(value) {
+      this.selectedGenre = value;
+      this.fetchGames();
+    },
+    async fetchGenres() {
+      try {
+        const response = await axios.get('http://localhost:5000/Genres');
+        this.genres = ['All', ...response.data];
+      } catch (error) {
+        console.error('Error fetching genres:', error);
+      }
     }
   },
   mounted() {
+    this.fetchGenres();
     this.fetchGames();
   }
 }

@@ -26,5 +26,19 @@ services:
     ports:
       - "8080:8080"
 
+  liquid-postgres:
+    image: postgres
+    container_name: postgres
+    environment:
+      POSTGRES_PASSWORD: test123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+networks:
+  mynetwork:
+
 volumes:
   mongodb_data:
+  pgdata:

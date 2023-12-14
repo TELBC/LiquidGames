@@ -53,7 +53,7 @@ public class GenresController : ControllerBase
     public async Task<ActionResult<IEnumerable<LiquidGamesDatabase.Genre>>> GetGenres()
     {
         var genres = await _liquidGamesDb.Genres.Find(_ => true).ToListAsync();
-        return Ok(genres);
+        return Ok(genres.Select(g => g.GenreName));
     }
 
     /// <summary>
@@ -62,16 +62,72 @@ public class GenresController : ControllerBase
     /// <param name="genreName"></param>
     /// <returns></returns>
     [HttpGet("{genreName}")]
-    public async Task<ActionResult<LiquidGamesDatabase.Genre>> GetGenre(string genreName)
+    public async Task<ActionResult<LiquidGamesDatabase.Genre>> GetGenre(string genreName, OrderBy orderBy, OrderType orderType, int page = 1, int pageSize = 100)
     {
-        var genre = await _liquidGamesDb.Genres.Find(g => g.GenreName == genreName).FirstOrDefaultAsync();
-        if (genre == null)
+      var genre = await _liquidGamesDb.Genres.Find(g => g.GenreName == genreName).FirstOrDefaultAsync();
+      if (genre == null)
+      {
+          return NotFound();
+      }
+
+      var games = genre.Games.AsQueryable();
+
+        switch (orderType)
         {
-            return NotFound();
+            case OrderType.Asc:
+                switch (orderBy)
+                {
+                    case OrderBy.Year:
+                        games = games.OrderBy(g => g.ReleaseYear);
+                        break;
+                    case OrderBy.Global_Sales:
+                        games = games.OrderBy(g => g.Global_Sales);
+                        break;
+                    case OrderBy.EU_Sales:
+                        games = games.OrderBy(g => g.EU_Sales);
+                        break;
+                    case OrderBy.NA_Sales:
+                        games = games.OrderBy(g => g.NA_Sales);
+                        break;
+                    case OrderBy.JP_Sales:
+                        games = games.OrderBy(g => g.JP_Sales);
+                        break;
+                    case OrderBy.Other_Sales:
+                        games = games.OrderBy(g => g.Other_Sales);
+                        break;
+                }
+                break;
+            case OrderType.Desc:
+                switch (orderBy)
+                {
+                    case OrderBy.Year:
+                        games = games.OrderByDescending(g => g.ReleaseYear);
+                        break;
+                    case OrderBy.Global_Sales:
+                        games = games.OrderByDescending(g => g.Global_Sales);
+                        break;
+                    case OrderBy.EU_Sales:
+                        games = games.OrderByDescending(g => g.EU_Sales);
+                        break;
+                    case OrderBy.NA_Sales:
+                        games = games.OrderByDescending(g => g.NA_Sales);
+                        break;
+                    case OrderBy.JP_Sales:
+                        games = games.OrderByDescending(g => g.JP_Sales);
+                        break;
+                    case OrderBy.Other_Sales:
+                        games = games.OrderByDescending(g => g.Other_Sales);
+                        break;
+                }
+                break;
         }
 
-        return Ok(genre);
-    }
+          games = games.Skip((page - 1) * pageSize).Take(pageSize);
+
+          genre.Games = games.ToList();
+
+          return Ok(genre);
+        }
 
     /// <summary>
     /// Gets a specific game by name.

@@ -5,17 +5,21 @@ namespace LiquidAPI.Database.Relational;
 
 public class LiquidGamesContext : DbContext
 {
-    public LiquidGamesContext(DbContextOptions<LiquidGamesContext> options) : base(options)
+    public LiquidGamesContext(DbContextOptions<LiquidGamesContext> options,IConfiguration configuration) : base(options)
     {
+        _configuration = configuration;
     }
     public DbSet<Genre> Genres { get; set; }
     public DbSet<Game> Games { get; set; }
     public DbSet<Publisher> Publishers { get; set; }
     public DbSet<Platform> Platforms { get; set; }
 
+    private readonly IConfiguration _configuration;
+
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseNpgsql("Host=localhost;Database=LiquidGames;Username=postgres;Password=test123");
+        optionsBuilder.UseNpgsql(_configuration.GetConnectionString("Postgres"));
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

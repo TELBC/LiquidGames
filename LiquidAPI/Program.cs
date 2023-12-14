@@ -7,6 +7,7 @@ using Bogus;
 using LiquidAPI.Database.Relational;
 using LiquidAPI.Relational;
 using Microsoft.EntityFrameworkCore;
+using MongoDB.Bson;
 
 namespace LiquidAPI;
 
@@ -19,12 +20,14 @@ public class Program
 
         using var scope = host.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<LiquidGamesDatabase>();
-        var csvFilePath = Path.Combine(env.ContentRootPath, "vgsales.csv");
+        var csvFilePath = Path.Combine(env.ContentRootPath, "vgsa`les.csv");
 
         //Inserts ~17000 games into the database
         Console.Write(
-            "\n ---------------------------------------- \n Database Seeding Speed Test for 17000 entries \n ---------------------------------------- \n");
+            "\n ---------------------------------------- \n Database Seeding Benchmark \n ---------------------------------------- \n");
 
+        Console.WriteLine("Both databases will be seeded with 17000 entries.");
+        
         // MongoDB
         Console.WriteLine("MongoDB");
         await SeedDatabaseMongoAsync(dbContext, csvFilePath);
@@ -33,12 +36,52 @@ public class Program
         // Postgres
         Console.WriteLine("Postgres");
         await SeedDatabasePostgresAsync(host.Services);
-        Console.WriteLine();
+        Console.WriteLine("---------------------------------------- \n");
+        
 
-
-        //Inserts ~17000 games into the database
+        //Read games from the database
         Console.Write(
-            "\n ---------------------------------------- \n Database Reading Speed Test for 17000 entries \n ---------------------------------------- \n");
+            "\n ---------------------------------------- \n Read Delete Benchmark \n ---------------------------------------- \n");
+
+        // MongoDB
+        Console.WriteLine("MongoDB");
+        await ReadOperationsMongoAsync(dbContext, 2000);
+        Console.WriteLine();
+        
+        // Postgres
+        Console.WriteLine("Postgres");
+        await ReadOperationsPostgresAsync(host.Services.GetRequiredService<LiquidGamesContext>(), 2000);
+        Console.WriteLine("---------------------------------------- \n");
+        
+
+        //Update games from the database
+        Console.Write(
+            "\n ---------------------------------------- \n Database Update Benchmark \n ---------------------------------------- \n");
+
+        // MongoDB
+        Console.WriteLine("MongoDB");
+        await UpdateOperationsMongoAsync(dbContext, 2000);
+        Console.WriteLine();
+        
+        // Postgres
+        Console.WriteLine("Postgres");
+        await UpdateOperationsPostgresAsync(host.Services.GetRequiredService<LiquidGamesContext>(), 2000);
+        Console.WriteLine("---------------------------------------- \n");
+        
+        
+        //Delete games from the database
+        Console.Write(
+            "\n ---------------------------------------- \n Database Delete Benchmark \n ---------------------------------------- \n");
+
+        // MongoDB
+        Console.WriteLine("MongoDB");
+        await DeleteOperationsMongoAsync(dbContext, 2000);
+        Console.WriteLine();
+        
+        // Postgres
+        Console.WriteLine("Postgres");
+        await DeleteOperationsPostgresAsync(host.Services.GetRequiredService<LiquidGamesContext>(), 2000);
+        Console.WriteLine("---------------------------------------- \n");
 
 
         await host.RunAsync();
@@ -66,7 +109,7 @@ public class Program
         var alreadySeeded = await liquidGamesDb.Genres.Find(_ => true).AnyAsync();
         if (alreadySeeded)
         {
-            Console.WriteLine("Database already seeded.");
+            Console.WriteLine("MongoDB already seeded.");
             return;
         }
 
@@ -142,7 +185,6 @@ public class Program
     ///    This method will seed the database with the data from the CSV file. Used for relational database.
     /// </summary>
     /// <param name="serviceProvider"></param>
-    /// <param name="csvFilePath"></param>
     private static async Task SeedDatabasePostgresAsync(IServiceProvider serviceProvider)
     {
         using var scope = serviceProvider.CreateScope();
@@ -152,6 +194,7 @@ public class Program
 
         if (context.Games.Any())
         {
+            Console.WriteLine("Postgres already seeded.");
             return;
         }
 
@@ -201,4 +244,137 @@ public class Program
         stopwatch.Stop();
         Console.WriteLine($"Database seeding completed in {stopwatch.ElapsedMilliseconds} ms.");
     }
+    
+    /// <summary>
+    ///   This method will read all games from the database. Used for NoSQL database.
+    /// </summary>
+    /// <param name="liquidGamesDb"></param>
+    /// <param name="operationsCount"></param>
+    private static async Task UpdateOperationsMongoAsync(LiquidGamesDatabase liquidGamesDb, int operationsCount)
+    {
+        Console.WriteLine($"Updating {operationsCount} games.");
+        var stopwatch = Stopwatch.StartNew();
+
+        for (var i = 0; i < operationsCount; i++)
+        {
+            var genreFilter = Builders<LiquidGamesDatabase.Genre>.Filter.Eq(g => g.GenreName, $"Genre {i}");
+            var gameFilter = Builders<LiquidGamesDatabase.Game>.Filter.Eq(g => g.GameName, $"Game to Update {i}");
+            var update = Builders<LiquidGamesDatabase.Genre>.Update.Set("Games.$[game].NA_Sales", 200);
+            var arrayFilters = new List<ArrayFilterDefinition> { new BsonDocumentArrayFilterDefinition<BsonDocument>(new BsonDocument("game", gameFilter.ToBsonDocument())) };
+            await liquidGamesDb.Genres.UpdateOneAsync(genreFilter, update, new UpdateOptions { ArrayFilters = arrayFilters });
+        }
+
+        stopwatch.Stop();
+        Console.WriteLine($"{operationsCount} update operations completed in {stopwatch.ElapsedMilliseconds} ms.");
+    }
+
+    
+    /// <summary>
+    ///  This method will read all games from the database. Used for relational database.
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="operationsCount"></param>
+    private static async Task UpdateOperationsPostgresAsync(LiquidGamesContext context, int operationsCount)
+    {
+        Console.WriteLine($"Updating {operationsCount} games.");
+        var stopwatch = Stopwatch.StartNew();
+
+        for (var i = 0; i < operationsCount; i++)
+        {
+            var game = context.Games.FirstOrDefault(g => g.Name == $"Game to Update {i}");
+            if (game == null) continue;
+            game.NA_Sales = 200;
+            context.Games.Update(game);
+        }
+
+        await context.SaveChangesAsync();
+
+        stopwatch.Stop();
+        Console.WriteLine($"{operationsCount} update operations completed in {stopwatch.ElapsedMilliseconds} ms.");
+    }
+    
+    private static async Task DeleteOperationsMongoAsync(LiquidGamesDatabase liquidGamesDb, int operationsCount)
+    {
+        Console.WriteLine($"Deleting {operationsCount} games.");
+        var stopwatch = Stopwatch.StartNew();
+
+        for (var i = 0; i < operationsCount; i++)
+        {
+            var genreFilter = Builders<LiquidGamesDatabase.Genre>.Filter.Eq(g => g.GenreName, $"Genre {i}");
+            var gameFilter = Builders<LiquidGamesDatabase.Game>.Filter.Eq(g => g.GameName, $"Game to Delete {i}");
+            var update = Builders<LiquidGamesDatabase.Genre>.Update.PullFilter(g => g.Games, gameFilter);
+            await liquidGamesDb.Genres.UpdateOneAsync(genreFilter, update);
+        }
+
+        stopwatch.Stop();
+        Console.WriteLine($"{operationsCount} delete operations completed in {stopwatch.ElapsedMilliseconds} ms.");
+    }
+
+    private static async Task DeleteOperationsPostgresAsync(LiquidGamesContext context, int operationsCount)
+    {
+        Console.WriteLine($"Deleting {operationsCount} games.");
+        var stopwatch = Stopwatch.StartNew();
+
+        for (var i = 0; i < operationsCount; i++)
+        {
+            var game = context.Games.FirstOrDefault(g => g.Name == $"Game to Delete {i}");
+            if (game != null)
+            {
+                context.Games.Remove(game);
+            }
+        }
+
+        await context.SaveChangesAsync();
+
+        stopwatch.Stop();
+        Console.WriteLine($"{operationsCount} delete operations completed in {stopwatch.ElapsedMilliseconds} ms.");
+    }
+
+    private static async Task ReadOperationsMongoAsync(LiquidGamesDatabase liquidGamesDb, int operationsCount)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        // Find all without filter
+        await liquidGamesDb.Genres.Find(_ => true).ToListAsync();
+
+        // Find with filter
+        var genreFilter = Builders<LiquidGamesDatabase.Genre>.Filter.Eq(g => g.GenreName, $"Genre {operationsCount}");
+        await liquidGamesDb.Genres.Find(genreFilter).ToListAsync();
+
+        // Find with filter and projection
+        var projection = Builders<LiquidGamesDatabase.Genre>.Projection.Include(g => g.GenreName);
+        await liquidGamesDb.Genres.Find(genreFilter).Project(projection).ToListAsync();
+
+        // Find with filter, projection and sorting
+        var sort = Builders<LiquidGamesDatabase.Genre>.Sort.Ascending(g => g.GenreName);
+        await liquidGamesDb.Genres.Find(genreFilter).Project(projection).Sort(sort).ToListAsync();
+
+        stopwatch.Stop();
+        Console.WriteLine($"{operationsCount} read operations completed in {stopwatch.ElapsedMilliseconds} ms.");
+    }
+    
+    private static async Task ReadOperationsPostgresAsync(LiquidGamesContext context, int operationsCount)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        // Find all without filter
+        await context.Games.ToListAsync();
+
+        // Find with filter
+        var gameFilter = context.Games.Where(g => g.Name == $"Game to Read {operationsCount}");
+        await gameFilter.ToListAsync();
+
+        // Find with filter and projection
+        var gameFilterAndProjection = gameFilter.Select(g => new { g.Name, g.ReleaseYear });
+        await gameFilterAndProjection.ToListAsync();
+
+        // Find with filter, projection and sorting
+        var gameFilterProjectionSort = gameFilterAndProjection.OrderBy(g => g.Name);
+        await gameFilterProjectionSort.ToListAsync();
+
+        stopwatch.Stop();
+        Console.WriteLine($"{operationsCount} read operations completed in {stopwatch.ElapsedMilliseconds} ms.");
+    }
+
+
 }

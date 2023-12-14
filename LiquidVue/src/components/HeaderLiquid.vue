@@ -8,12 +8,36 @@
           <div class="games">Games</div>
         </div>
       </div>
+      <div class="dropdowns">
+        <select @change="updateOrderBy" class="load-button">
+          <option v-for="option in orderByOptions" :value="option">{{ option }}</option>
+        </select>
+        <select @change="updateOrderType" class="load-button">
+          <option v-for="option in orderTypeOptions" :value="option">{{ option }}</option>
+        </select>
+      </div>
     </div>
     <div class="line"/>
   </div>
 </template>
 
 <script>
+export default {
+  props: {
+    orderBy: String,
+    orderType: String,
+    orderByOptions: Array,
+    orderTypeOptions: Array
+  },
+  methods: {
+    updateOrderBy(event) {
+      this.$emit('update:orderBy', event.target.value);
+    },
+    updateOrderType(event) {
+      this.$emit('update:orderType', event.target.value);
+    }
+  }
+};
 </script>
 
 <style scoped>
@@ -53,9 +77,32 @@
   padding: 20px;
 }
 
-.line{
+.line {
   width: 100vw;
   background-color: #9c9b9b;
   height: 2px;
+}
+
+.dropdowns {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-right: 20px;
+}
+
+.load-button {
+  border: solid black 1px;
+  display: block;
+  margin: 0 0 10px; /* Adjusted margin */
+  padding: 10px 10px;
+  background-color: #e8e8e8;
+  color: black;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.load-button:hover {
+  background-color: #cbcbcb;
 }
 </style>

@@ -56,6 +56,7 @@ export default {
   flex-direction: column;
   align-items: center;
   gap: 10px;
+  flex: 0 0 auto;
 }
 
 .info .game-name {
@@ -74,4 +75,6 @@ export default {
   justify-content: space-between;
   width: 100%;
 }
+
+
 </style>

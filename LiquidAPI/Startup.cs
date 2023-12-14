@@ -17,6 +17,15 @@ public class Startup
                 Configuration.GetValue<string>("DatabaseSettings:DatabaseName"),
                 Configuration.GetValue<string>("DatabaseSettings:CollectionName")));
         services.AddControllers();
+        services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(builder =>
+            {
+                builder.AllowAnyOrigin()
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+        });
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -26,6 +35,7 @@ public class Startup
             app.UseDeveloperExceptionPage();
         }
 
+        app.UseCors();
         app.UseHttpsRedirection();
         app.UseRouting();
         app.UseAuthorization();

@@ -23,7 +23,7 @@ public class GamesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<LiquidGamesDatabase.Game>>> GetGames()
     {
-        var games = _liquidGamesDb.Games.ToList();
+        var games = _liquidGamesDb.Games.Take(100).ToList();
         return Ok(games);
     }
 

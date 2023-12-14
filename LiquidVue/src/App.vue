@@ -27,26 +27,10 @@ export default {
     }
   },
   mounted() {
-    this.games = [
-      {"Rank":"lol", "GameName":"lol", "Platform":"lol", "ReleaseYear":"lol", "Global_Sales":"lol"},
-      {"Rank":"lol", "GameName":"lol", "Platform":"lol", "ReleaseYear":"lol", "Global_Sales":"lol"},
-      {"Rank":"lol", "GameName":"lol", "Platform":"lol", "ReleaseYear":"lol", "Global_Sales":"lol"},
-      {"Rank":"lol", "GameName":"lol", "Platform":"lol", "ReleaseYear":"lol", "Global_Sales":"lol"},
-      {"Rank":"lol", "GameName":"lol", "Platform":"lol", "ReleaseYear":"lol", "Global_Sales":"lol"},
-      {"Rank":"lol", "GameName":"lol", "Platform":"lol", "ReleaseYear":"lol", "Global_Sales":"lol"},
-      {"Rank":"lol", "GameName":"lol", "Platform":"lol", "ReleaseYear":"lol", "Global_Sales":"lol"},
-      {"Rank":"lol", "GameName":"lol", "Platform":"lol", "ReleaseYear":"lol", "Global_Sales":"lol"},
-      {"Rank":"lol", "GameName":"lol", "Platform":"lol", "ReleaseYear":"lol", "Global_Sales":"lol"},
-      {"Rank":"lol", "GameName":"lol", "Platform":"lol", "ReleaseYear":"lol", "Global_Sales":"lol"},
-      {"Rank":"lol", "GameName":"lol", "Platform":"lol", "ReleaseYear":"lol", "Global_Sales":"lol"},
-      {"Rank":"lol", "GameName":"lol", "Platform":"lol", "ReleaseYear":"lol", "Global_Sales":"lol"},
-      {"Rank":"lol", "GameName":"lol", "Platform":"lol", "ReleaseYear":"lol", "Global_Sales":"lol"},
-      {"Rank":"lol", "GameName":"lol", "Platform":"lol", "ReleaseYear":"lol", "Global_Sales":"lol"}
-    ];
-    // axios.get('api-url-here')
-    //     .then(response => {
-    //       this.games = response.data;
-    //     });
+    axios.get('http://localhost:5000/Games')
+        .then(response => {
+          this.games = response.data;
+        });
   }
 }
 </script>

@@ -1,18 +1,19 @@
 <template>
   <div class="game-info">
     <img class="game-image" src="../assets/water-drop.png" alt="Game Image">
+    <hr class="image-line" />
     <div class="info">
-      <div class="game-name">{{ game.GameName }}</div>
-      <div class="platform">{{ game.Platform }}</div>
+      <div class="game-name">{{ game.gameName }}</div>
+      <div class="platform">{{ game.platform }}</div>
+      <div class="publisher">{{ game.publisher }}</div>
     </div>
     <div class="bottom-info">
-      <span class="release-year">{{ game.ReleaseYear }}</span>
-      <span class="rank">{{ game.Rank }}</span>
-      <span class="global-sales">{{ game.Global_Sales }}</span>
+      <span class="release-year">Year: <strong>{{ game.releaseYear }}</strong></span>
+      <span class="rank">Rank: <strong>{{ game.rank }}</strong></span>
+      <span class="global-sales">Sales: <strong>{{ game.global_Sales }} Mil</strong></span>
     </div>
   </div>
 </template>
-
 
 <script>
 export default {
@@ -27,33 +28,40 @@ export default {
 
 <style scoped>
 .game-info {
-  background-color: white;
-  padding: 10px;
-  margin: 10px;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  border: solid black 1px;
+  margin: 5px 40px;
+  border-radius: 1px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 100%;
+  background-color: #D9D9D9;
+}
+
+.game-info .image-line {
+  border: 0;
+  border-top: 2px solid black;
+  margin: 0 10px -40px;
 }
 
 .game-info .game-image {
+  padding-top: 10px;
   width: 100%;
-  height: 35%;
+  max-height: 40%;
+  height: auto;
   object-fit: contain;
-  object-position: center;
 }
 
 .info {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 10px;
 }
 
 .info .game-name {
   font-size: 2em;
   text-align: center;
+  font-weight: bolder;
 }
 
 .info .platform {
@@ -67,4 +75,3 @@ export default {
   width: 100%;
 }
 </style>
-

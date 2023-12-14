@@ -22,12 +22,18 @@ public class Program
         var dbContext = scope.ServiceProvider.GetRequiredService<LiquidGamesDatabase>();
         var csvFilePath = Path.Combine(env.ContentRootPath, "vgsales.csv");
 
+        // Create index for the Genre collection
+        var indexKeysDefinition = Builders<LiquidGamesDatabase.Genre>.IndexKeys.Ascending(g => g.GenreName);
+        var indexOptions = new CreateIndexOptions { Unique = true };
+        var createIndexModel = new CreateIndexModel<LiquidGamesDatabase.Genre>(indexKeysDefinition, indexOptions);
+        await dbContext.Genres.Indexes.CreateOneAsync(createIndexModel);
+
         //Inserts ~17000 games into the database
         Console.Write(
-            "\n ---------------------------------------- \n Database Seeding Benchmark \n ---------------------------------------- \n");
+            "\n---------------------------------------- \n Database Seeding Benchmark \n---------------------------------------- \n");
 
         Console.WriteLine("Both databases will be seeded with 17000 entries.");
-        
+
         // MongoDB
         Console.WriteLine("MongoDB");
         await SeedDatabaseMongoAsync(dbContext, csvFilePath);
@@ -37,47 +43,53 @@ public class Program
         Console.WriteLine("Postgres");
         await SeedDatabasePostgresAsync(host.Services);
         Console.WriteLine("---------------------------------------- \n");
-        
+
 
         //Read games from the database
         Console.Write(
-            "\n ---------------------------------------- \n Read Delete Benchmark \n ---------------------------------------- \n");
+            "\n---------------------------------------- \n Database Read Benchmark \n---------------------------------------- \n");
 
         // MongoDB
         Console.WriteLine("MongoDB");
-        await ReadOperationsMongoAsync(dbContext, 2000);
-        Console.WriteLine();
+        Console.WriteLine("Reading with index");
+        await ReadOperationsMongoAsync(dbContext, 10000);
         
+        await dbContext.Genres.Indexes.DropAllAsync();
+        
+        Console.WriteLine("Reading without index");
+        await ReadOperationsMongoAsync(dbContext, 10000);
+        Console.WriteLine();
+
         // Postgres
         Console.WriteLine("Postgres");
-        await ReadOperationsPostgresAsync(host.Services.GetRequiredService<LiquidGamesContext>(), 2000);
+        await ReadOperationsPostgresAsync(host.Services.GetRequiredService<LiquidGamesContext>(), 10000);
         Console.WriteLine("---------------------------------------- \n");
-        
+
 
         //Update games from the database
         Console.Write(
-            "\n ---------------------------------------- \n Database Update Benchmark \n ---------------------------------------- \n");
+            "\n---------------------------------------- \n Database Update Benchmark \n---------------------------------------- \n");
 
         // MongoDB
         Console.WriteLine("MongoDB");
         await UpdateOperationsMongoAsync(dbContext, 2000);
         Console.WriteLine();
-        
+
         // Postgres
         Console.WriteLine("Postgres");
         await UpdateOperationsPostgresAsync(host.Services.GetRequiredService<LiquidGamesContext>(), 2000);
         Console.WriteLine("---------------------------------------- \n");
-        
-        
+
+
         //Delete games from the database
         Console.Write(
-            "\n ---------------------------------------- \n Database Delete Benchmark \n ---------------------------------------- \n");
+            "\n---------------------------------------- \n Database Delete Benchmark \n---------------------------------------- \n");
 
         // MongoDB
         Console.WriteLine("MongoDB");
         await DeleteOperationsMongoAsync(dbContext, 2000);
         Console.WriteLine();
-        
+
         // Postgres
         Console.WriteLine("Postgres");
         await DeleteOperationsPostgresAsync(host.Services.GetRequiredService<LiquidGamesContext>(), 2000);
@@ -123,7 +135,7 @@ public class Program
 
         var records = csv.GetRecords<CsvGameRecord>().ToList();
         var gamesByGenre = new Dictionary<string, List<LiquidGamesDatabase.Game>>();
-        
+
         var stopwatch = Stopwatch.StartNew();
 
         foreach (var record in records)
@@ -139,7 +151,7 @@ public class Program
             double.TryParse(record.Other_Sales, NumberStyles.Any, CultureInfo.InvariantCulture, out double otherSales);
             double.TryParse(record.Global_Sales, NumberStyles.Any, CultureInfo.InvariantCulture,
                 out double globalSales);
-            
+
             var game = new LiquidGamesDatabase.Game
             {
                 Rank = rank,
@@ -212,17 +224,17 @@ public class Program
         var platforms = new Faker<Platform>()
             .RuleFor(p => p.Name, f => f.Commerce.ProductName())
             .Generate(20);
-        
+
         context.Genres.AddRange(genres);
         context.Publishers.AddRange(publishers);
         context.Platforms.AddRange(platforms);
 
         await context.SaveChangesAsync();
-        
+
         var faker = new Faker();
 
         var stopwatch = Stopwatch.StartNew();
-        
+
         for (var i = 0; i < 17000; i++)
         {
             var game = new Game
@@ -240,11 +252,12 @@ public class Program
             };
             await context.Games.AddAsync(game);
         }
+
         await context.SaveChangesAsync();
         stopwatch.Stop();
         Console.WriteLine($"Database seeding completed in {stopwatch.ElapsedMilliseconds} ms.");
     }
-    
+
     /// <summary>
     ///   This method will read all games from the database. Used for NoSQL database.
     /// </summary>
@@ -260,15 +273,20 @@ public class Program
             var genreFilter = Builders<LiquidGamesDatabase.Genre>.Filter.Eq(g => g.GenreName, $"Genre {i}");
             var gameFilter = Builders<LiquidGamesDatabase.Game>.Filter.Eq(g => g.GameName, $"Game to Update {i}");
             var update = Builders<LiquidGamesDatabase.Genre>.Update.Set("Games.$[game].NA_Sales", 200);
-            var arrayFilters = new List<ArrayFilterDefinition> { new BsonDocumentArrayFilterDefinition<BsonDocument>(new BsonDocument("game", gameFilter.ToBsonDocument())) };
-            await liquidGamesDb.Genres.UpdateOneAsync(genreFilter, update, new UpdateOptions { ArrayFilters = arrayFilters });
+            var arrayFilters = new List<ArrayFilterDefinition>
+            {
+                new BsonDocumentArrayFilterDefinition<BsonDocument>(new BsonDocument("game",
+                    gameFilter.ToBsonDocument()))
+            };
+            await liquidGamesDb.Genres.UpdateOneAsync(genreFilter, update,
+                new UpdateOptions { ArrayFilters = arrayFilters });
         }
 
         stopwatch.Stop();
         Console.WriteLine($"{operationsCount} update operations completed in {stopwatch.ElapsedMilliseconds} ms.");
     }
 
-    
+
     /// <summary>
     ///  This method will read all games from the database. Used for relational database.
     /// </summary>
@@ -292,7 +310,7 @@ public class Program
         stopwatch.Stop();
         Console.WriteLine($"{operationsCount} update operations completed in {stopwatch.ElapsedMilliseconds} ms.");
     }
-    
+
     private static async Task DeleteOperationsMongoAsync(LiquidGamesDatabase liquidGamesDb, int operationsCount)
     {
         Console.WriteLine($"Deleting {operationsCount} games.");
@@ -332,27 +350,25 @@ public class Program
 
     private static async Task ReadOperationsMongoAsync(LiquidGamesDatabase liquidGamesDb, int operationsCount)
     {
+        // Measure the performance of the operations with the index
         var stopwatch = Stopwatch.StartNew();
 
-        // Find all without filter
-        await liquidGamesDb.Genres.Find(_ => true).ToListAsync();
-
-        // Find with filter
+        // With filter
         var genreFilter = Builders<LiquidGamesDatabase.Genre>.Filter.Eq(g => g.GenreName, $"Genre {operationsCount}");
         await liquidGamesDb.Genres.Find(genreFilter).ToListAsync();
 
-        // Find with filter and projection
+        // With filter and projection
         var projection = Builders<LiquidGamesDatabase.Genre>.Projection.Include(g => g.GenreName);
         await liquidGamesDb.Genres.Find(genreFilter).Project(projection).ToListAsync();
 
-        // Find with filter, projection and sorting
+        // With filter, projection and sorting
         var sort = Builders<LiquidGamesDatabase.Genre>.Sort.Ascending(g => g.GenreName);
         await liquidGamesDb.Genres.Find(genreFilter).Project(projection).Sort(sort).ToListAsync();
 
         stopwatch.Stop();
-        Console.WriteLine($"{operationsCount} read operations completed in {stopwatch.ElapsedMilliseconds} ms.");
+        Console.WriteLine($"{operationsCount} read operations completed in {stopwatch.ElapsedMilliseconds} ms with index.");
     }
-    
+
     private static async Task ReadOperationsPostgresAsync(LiquidGamesContext context, int operationsCount)
     {
         var stopwatch = Stopwatch.StartNew();
@@ -375,6 +391,4 @@ public class Program
         stopwatch.Stop();
         Console.WriteLine($"{operationsCount} read operations completed in {stopwatch.ElapsedMilliseconds} ms.");
     }
-
-
 }

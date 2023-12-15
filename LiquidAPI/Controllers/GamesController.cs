@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+using MongoDB.Driver;
 
 namespace LiquidAPI.Controllers;
 
@@ -142,5 +144,28 @@ public class GamesController : ControllerBase
         }
 
         return Ok(games.ToList());
+    }
+    
+    /// <summary>
+    /// Deletes a specific game by name.
+    /// </summary>
+    /// <param name="gameName"></param>
+    /// <returns></returns>
+    [HttpDelete("{gameName}/{platform}")]
+    public IActionResult DeleteGame(string gameName, string platform)
+    {
+        var gameToDelete = _liquidGamesDb.Games.FirstOrDefault(g => g.GameName == gameName && g.Platform == platform);
+
+        if (gameToDelete == null)
+        {
+            return NotFound("Game not found");
+        }
+
+        var filter = Builders<LiquidGamesDatabase.Genre>.Filter.Where(genre => genre.Games.Any(g => g.GameName == gameName && g.Platform == platform));
+        var update = Builders<LiquidGamesDatabase.Genre>.Update.PullFilter(genre => genre.Games, g => g.GameName == gameName && g.Platform == platform);
+
+        _liquidGamesDb.Genres.FindOneAndUpdate(filter, update);
+
+        return Ok($"Game '{gameName}' on '{platform}' platform has been deleted.");
     }
 }

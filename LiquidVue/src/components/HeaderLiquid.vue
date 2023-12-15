@@ -8,6 +8,16 @@
           <div class="games">Games</div>
         </div>
       </div>
+      <div class="button-container">
+        <div class="button-wrapper">
+          <button @click="openCreatePopup" class="load-button">Add</button>
+          <CreateGame ref="gamecreatePopup" @close="closePopup" @closePopup="isPopupOpen = false" />
+        </div>
+        <div class="button-wrapper">
+          <button @click="openDeletePopup" class="load-button">Delete</button>
+          <DeleteGame ref="gamedeletePopup" @close="closePopup" @closePopup="isPopupOpen = false"/>
+        </div>
+      </div>
       <div class="search-container">
         <input type="text" v-model="searchTerm" @input="handleInput" placeholder="Search for similar games...">
       </div>
@@ -23,12 +33,19 @@
         </select>
       </div>
     </div>
+    <div class="overlay" v-if="isPopupOpen"></div>
     <div class="line"/>
   </div>
 </template>
 
 <script>
+import CreateGame from "@/components/CreateGame.vue";
+import DeleteGame from "@/components/DeleteGame.vue";
 export default {
+  components: {
+    CreateGame,
+    DeleteGame
+  },
   props: {
     orderBy: String,
     orderType: String,
@@ -40,10 +57,22 @@ export default {
     return {
       selectedGenre: 'All',
       searchTerm: '',
-      delayTimer: null
+      delayTimer: null,
+      isPopupOpen: false
     };
   },
   methods: {
+    openCreatePopup() {
+      this.isPopupOpen = true;
+      this.$refs.gamecreatePopup.show();
+    },
+    openDeletePopup() {
+      this.isPopupOpen = true;
+      this.$refs.gamedeletePopup.show();
+    },
+    closePopup() {
+      this.isPopupOpen = false;
+    },
     handleInput() {
       clearTimeout(this.delayTimer);
       this.delayTimer = setTimeout(() => {
@@ -114,6 +143,7 @@ export default {
   flex-direction: column;
   align-items: flex-start;
   margin-right: 20px;
+  gap: 5px;
 }
 
 .load-button {
@@ -122,7 +152,8 @@ export default {
   margin: 0 0 5px;
   padding: 5px 10px;
   font-size: 12px;
-  width: 100px;
+  min-width: 100px;
+  width: auto;
   background-color: white;
   color: black;
   border-radius: 5px;
@@ -141,5 +172,31 @@ export default {
   padding: 8px;
   border-radius: 4px;
   width: 250px;
+}
+.button-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.button-wrapper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 5px;
+}
+
+.load-button {
+  flex: 1;
+  width: 100%; /* Adjust width */
+  margin: 0;
+}
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
 }
 </style>

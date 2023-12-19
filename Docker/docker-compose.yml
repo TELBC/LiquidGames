@@ -8,7 +8,7 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - DatabaseSettings:ConnectionString=mongodb://liquid-mongo:27017
+      - DatabaseSettings:ConnectionString=mongodb+srv://liquidgames:F2YgwdkA2uDptZCj@liquidgames.a6opfm0.mongodb.net/
       - ASPNETCORE_URLS=http://+:5000
 
   liquid-mongo:
